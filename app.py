@@ -24,7 +24,7 @@ with st.sidebar:
 
 
 st.header("Panel de Control de Riesgo Climatico")
-st.markdown("Integracion de datos meteorologicos historicos (2015-2025) y bases de datos MIDAGRI/SENASA."
+st.markdown("Integracion de datos meteorologicos historicos (2015-2025) y bases de datos MIDAGRI/SENASA.")
             
 if 'lat_seleccionada' not in st.session_state:
     st.session_state['lat_seleccionada'] = None
