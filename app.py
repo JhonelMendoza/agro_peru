@@ -123,15 +123,22 @@ with col_mapa:
 
 
 with col_datos:
+    # 1. Primero atrapamos el clic y lo guardamos en la memoria
     if mapa_web and mapa_web.get("last_clicked"):
-        lat = mapa_web["last_clicked"]["lat"]
-        lon = mapa_web["last_clicked"]["lng"]
+        nuevo_lat = mapa_web["last_clicked"]["lat"]
+        nuevo_lon = mapa_web["last_clicked"]["lng"]
         
-        if lat != st.session_state['lat_seleccionada'] or lon != st.session_state['lon_seleccionada']:
-            st.session_state['lat_seleccionada'] = lat
-            st.session_state['lon_seleccionada'] = lon
+        # Si es un clic nuevo, actualizamos memoria y recargamos
+        if nuevo_lat != st.session_state['lat_seleccionada'] or nuevo_lon != st.session_state['lon_seleccionada']:
+            st.session_state['lat_seleccionada'] = nuevo_lat
+            st.session_state['lon_seleccionada'] = nuevo_lon
             st.rerun()
             
+    # 2. Hacemos el análisis basándonos en la MEMORIA, no en el clic temporal
+    if st.session_state['lat_seleccionada'] is not None:
+        lat = st.session_state['lat_seleccionada']
+        lon = st.session_state['lon_seleccionada']
+        
         with st.spinner("Procesando telemetria satelital..."):
             nombre_ubi, dep_mapa = obtener_datos_geo(lat, lon)
             altitud_msnm = obtener_elevacion(lat, lon)
