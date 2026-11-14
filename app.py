@@ -11,15 +11,15 @@ st.set_page_config(page_title="AgroIA", layout="wide")
 
 
 with st.sidebar:
-    st.title("AgroIA Analytics")
+    st.title("AGROIA")
     st.write("Plataforma de inteligencia satelital para prediccion climatica y planificacion agricola.")
     st.divider()
     st.subheader("Instrucciones del Sistema")
     st.write("1. Navegue por el visor geoespacial.")
     st.write("2. Seleccione un cuadrante en el territorio peruano.")
-    st.write("3. Aguarde la sincronizacion con los servidores de NASA POWER y Topografia API.")
+    #st.write("3. Aguarde la sincronizacion con los servidores de NASA POWER y Topografia API.")
     st.divider()
-    st.caption("MODULO: NASA Space Apps Challenge 2026")
+    st.caption("MODULO: AGROIA")
     st.caption("ESTADO: Servidores Operativos")
 
 
