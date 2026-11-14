@@ -11,13 +11,12 @@ st.set_page_config(page_title="AgroIA", layout="wide")
 
 
 with st.sidebar:
-    st.title("AGROIA")
+    st.title(" AGROIA ")
     st.write("Plataforma de inteligencia satelital para prediccion climatica y planificacion agricola.")
     st.divider()
     st.subheader("Instrucciones del Sistema")
     st.write("1. Navegue por el visor geoespacial.")
     st.write("2. Seleccione un cuadrante en el territorio peruano.")
-    #st.write("3. Aguarde la sincronizacion con los servidores de NASA POWER y Topografia API.")
     st.divider()
     st.caption("MODULO: AGROIA")
     st.caption("ESTADO: Servidores Operativos")
@@ -123,18 +122,15 @@ with col_mapa:
 
 
 with col_datos:
-    # 1. Primero atrapamos el clic y lo guardamos en la memoria
     if mapa_web and mapa_web.get("last_clicked"):
         nuevo_lat = mapa_web["last_clicked"]["lat"]
         nuevo_lon = mapa_web["last_clicked"]["lng"]
         
-        # Si es un clic nuevo, actualizamos memoria y recargamos
         if nuevo_lat != st.session_state['lat_seleccionada'] or nuevo_lon != st.session_state['lon_seleccionada']:
             st.session_state['lat_seleccionada'] = nuevo_lat
             st.session_state['lon_seleccionada'] = nuevo_lon
             st.rerun()
             
-    # 2. Hacemos el análisis basándonos en la MEMORIA, no en el clic temporal
     if st.session_state['lat_seleccionada'] is not None:
         lat = st.session_state['lat_seleccionada']
         lon = st.session_state['lon_seleccionada']
