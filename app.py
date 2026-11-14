@@ -6,10 +6,10 @@ import pandas as pd
 from sklearn.linear_model import LinearRegression
 import unicodedata
 
-# Configuracion de pagina en modo amplio y titulo profesional
-st.set_page_config(page_title="AgroIA Dashboard", layout="wide")
 
-# --- BARRA LATERAL (SIDEBAR) ---
+st.set_page_config(page_title="AgroIA", layout="wide")
+
+
 with st.sidebar:
     st.title("AgroIA Analytics")
     st.write("Plataforma de inteligencia satelital para prediccion climatica y planificacion agricola.")
@@ -22,11 +22,10 @@ with st.sidebar:
     st.caption("MODULO: NASA Space Apps Challenge 2026")
     st.caption("ESTADO: Servidores Operativos")
 
-# Titulo principal
-st.header("Panel de Control de Riesgo Climatico")
-st.markdown("Integracion de datos meteorologicos historicos (2015-2025) y bases de datos MIDAGRI/SENASA.")
 
-# --- MEMORIA DEL SISTEMA ---
+st.header("Panel de Control de Riesgo Climatico")
+st.markdown("Integracion de datos meteorologicos historicos (2015-2025) y bases de datos MIDAGRI/SENASA."
+            
 if 'lat_seleccionada' not in st.session_state:
     st.session_state['lat_seleccionada'] = None
     st.session_state['lon_seleccionada'] = None
@@ -97,9 +96,7 @@ def obtener_elevacion(lat, lon):
 
 col_mapa, col_datos = st.columns([1.2, 1])
 
-# ==========================================
-# SECCION VISUAL: VISOR GEOESPACIAL
-# ==========================================
+
 with col_mapa:
     centro_mapa = [-9.19, -75.01]
     zoom_mapa = 6
@@ -124,9 +121,7 @@ with col_mapa:
     
     mapa_web = st_folium(m, height=700, width=800, key="visor_principal")
 
-# ==========================================
-# SECCION ANALITICA: DATOS Y RECOMENDACIONES
-# ==========================================
+
 with col_datos:
     if mapa_web and mapa_web.get("last_clicked"):
         lat = mapa_web["last_clicked"]["lat"]
@@ -175,7 +170,6 @@ with col_datos:
                     else:
                         piso_ecologico, nombre_piso = 'sierra_alta', "Sierra Alta / Puna"
                     
-                    # Uso de Metricas Tipo Dashboard
                     col_m1, col_m2 = st.columns(2)
                     col_m1.metric(label="Jurisdiccion Regional", value=region_dra.upper())
                     col_m2.metric(label="Altitud Topografica", value=f"{altitud_msnm} msnm", delta=nombre_piso, delta_color="off")
@@ -212,7 +206,6 @@ with col_datos:
                             alerta_senasa = plaga_datos
                             break
                     
-                    # Pestañas interactivas para presentar la informacion de forma mas limpia
                     tab1, tab2 = st.tabs(["Directiva MIDAGRI", "Protocolo SENASA"])
                     
                     with tab1:
