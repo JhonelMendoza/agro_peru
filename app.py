@@ -107,7 +107,7 @@ with col_datos:
                 es_mar_o_invalido = True
                 
             if es_mar_o_invalido:
-                st.markdown("<h3 style='color: #00E5FF;'>Analisis de Riesgo Climatico</h3>", unsafe_allow_html=True)
+                st.markdown("<h3 style='color: #00E5FF;'>Analisis de Riesgo Climatico AGROIA </h3>", unsafe_allow_html=True)
                 st.warning("ZONA NO APTA PARA CULTIVO: El marcador se encuentra en el mar o fuera de la frontera agricola continental peruana.")
             else:
                 st.markdown(f"<h4 style='color: #00FF7F;'>Ubicacion validada: {display_name}</h4>", unsafe_allow_html=True)
