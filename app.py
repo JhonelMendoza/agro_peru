@@ -15,7 +15,7 @@ st.markdown("""
     <style>
     .stApp { background-color: #0E1117; color: #FAFAFA; }
     .css-1d391kg { background-color: #262730; }
-    .metric-card { background-color: #1E1E1E; padding: 15px; border-radius: 10px; border: 1px solid #333; text-align: center; }
+    .metric-card { background-color: #1E1E1E; padding: 15px; border-radius: 10px; border: 1px solid #333; text-align: center; margin-bottom: 15px; }
     .metric-value { font-size: 2rem; font-weight: bold; color: #00E5FF; }
     .metric-label { font-size: 0.9rem; color: #A0A0A0; }
     </style>
@@ -100,10 +100,15 @@ with col_datos:
             altitud_msnm = obtener_elevacion(lat, lon)
             display_norm = normalizar_texto(display_name)
             
-            es_mar = altitud_msnm <= 0.0 and (not display_name or any(palabra in display_norm for palabra in ['ocean', 'mar ', 'sea', 'pacific']))
-            
-            if es_mar:
-                st.error("ZONA MARÍTIMA DETECTADA: El área seleccionada corresponde al océano. No es apta para cultivo ni análisis agronómico.")
+            es_mar_o_invalido = False
+            if not display_name or any(palabra in display_norm for palabra in ['ocean', 'sea', 'mar ', 'pacifico', 'pacific']):
+                es_mar_o_invalido = True
+            if 'peru' not in display_norm and not es_mar_o_invalido:
+                es_mar_o_invalido = True
+                
+            if es_mar_o_invalido:
+                st.markdown("<h3 style='color: #00E5FF;'>Analisis de Riesgo Climatico</h3>", unsafe_allow_html=True)
+                st.warning("ZONA NO APTA PARA CULTIVO: El marcador se encuentra en el mar o fuera de la frontera agricola continental peruana.")
             else:
                 st.markdown(f"<h4 style='color: #00FF7F;'>Ubicacion validada: {display_name}</h4>", unsafe_allow_html=True)
                 
@@ -144,10 +149,8 @@ with col_datos:
                         X = df_anual[['Anio']]
                         y_temp = df_anual['Temp']
                         y_lluvia = df_anual['Lluvia']
-                        
                         modelo_temp = LinearRegression().fit(X, y_temp)
                         modelo_lluvia = LinearRegression().fit(X, y_lluvia)
-                        
                         temp_pred = modelo_temp.predict([[anio_pred]])[0]
                         lluvia_pred = max(0, modelo_lluvia.predict([[anio_pred]])[0])
                     else:
@@ -204,3 +207,14 @@ with col_datos:
                     alertas = bd_senasa[piso]
                     for alerta in alertas:
                         st.markdown(f"<div style='background-color: #2E1A1A; padding: 10px; border-left: 5px solid #FF4B4B; margin-bottom: 10px;'><b>Amenaza Proyectada:</b> {alerta['plaga']}<br><b>Contramedida Oficial:</b> {alerta['tratamiento']}</div>", unsafe_allow_html=True)
+    else:
+        st.markdown("<h3 style='color: #00E5FF;'>Analisis de Riesgo Climatico</h3>", unsafe_allow_html=True)
+        st.info("Seleccione algun punto del territorio peruano en el mapa para analizar y predecir el clima y el sembrio optimo para su region.")
+        
+        col_m1, col_m2 = st.columns(2)
+        col_m1.markdown("<div class='metric-card'><div class='metric-label'>Altitud Topografica</div><div class='metric-value'>-</div></div>", unsafe_allow_html=True)
+        col_m2.markdown("<div class='metric-card'><div class='metric-label'>Temperatura Promedio</div><div class='metric-value'>-</div></div>", unsafe_allow_html=True)
+        
+        fig_empty = px.bar(title="Esperando seleccion en el mapa...", template="plotly_dark")
+        fig_empty.update_layout(height=250, margin=dict(l=0, r=0, t=40, b=0), xaxis={'visible': False}, yaxis={'visible': False})
+        st.plotly_chart(fig_empty, use_container_width=True)
