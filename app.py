@@ -209,7 +209,7 @@ with col_datos:
                         st.markdown(f"<div style='background-color: #2E1A1A; padding: 10px; border-left: 5px solid #FF4B4B; margin-bottom: 10px;'><b>Amenaza Proyectada:</b> {alerta['plaga']}<br><b>Contramedida Oficial:</b> {alerta['tratamiento']}</div>", unsafe_allow_html=True)
     else:
         st.markdown("<h3 style='color: #00E5FF;'>Analisis de Riesgo Climatico</h3>", unsafe_allow_html=True)
-        st.info("Seleccione algun punto del territorio peruano en el mapa para analizar y predecir el clima y el sembrio optimo para su region.")
+        st.info("Haga clic en un punto del mapa  para generar un diagnóstico agroclimático y proyectar los sembríos de mayor rendimiento según las características de la zona.")
         
         col_m1, col_m2 = st.columns(2)
         col_m1.markdown("<div class='metric-card'><div class='metric-label'>Altitud Topografica</div><div class='metric-value'>-</div></div>", unsafe_allow_html=True)
