@@ -3,40 +3,38 @@ import folium
 from streamlit_folium import st_folium
 import requests
 import pandas as pd
-from sklearn.linear_model import LinearRegression
 import unicodedata
+import plotly.graph_objects as go
+import plotly.express as px
 
+# 1. CONFIGURACIÓN Y MODO OSCURO FORZADO
+st.set_page_config(page_title="AgroIA - NASA Space Apps", layout="wide", initial_sidebar_state="collapsed")
 
-st.set_page_config(page_title="AgroIA", layout="wide")
+# CSS para oscurecer la interfaz y dar estilo a las tarjetas
+st.markdown("""
+    <style>
+    .stApp { background-color: #0E1117; color: #FAFAFA; }
+    .css-1d391kg { background-color: #262730; }
+    .metric-card { background-color: #1E1E1E; padding: 15px; border-radius: 10px; border: 1px solid #333; text-align: center; }
+    .metric-value { font-size: 2rem; font-weight: bold; color: #00E5FF; }
+    .metric-label { font-size: 0.9rem; color: #A0A0A0; }
+    </style>
+""", unsafe_allow_html=True)
 
-
-with st.sidebar:
-    st.title(" AGROIA ")
-    st.write("Plataforma de inteligencia satelital para prediccion climatica y planificacion agricola.")
-    st.divider()
-    st.subheader("Instrucciones del Sistema")
-    st.write("1. Navegue por el visor geoespacial.")
-    st.write("2. Seleccione un cuadrante en el territorio peruano.")
-    st.divider()
-    st.caption("MODULO: AGROIA")
-    st.caption("ESTADO: Servidores Operativos")
-
-
-st.header("Panel de Control de Riesgo Climatico")
-st.markdown("Integracion de datos meteorologicos historicos (2015-2025) y bases de datos MIDAGRI/SENASA.")
-            
+# --- MEMORIA DEL SISTEMA ---
 if 'lat_seleccionada' not in st.session_state:
     st.session_state['lat_seleccionada'] = None
     st.session_state['lon_seleccionada'] = None
 
+# --- BASES DE DATOS ---
 bd_dra_peru = {
-    'amazonas': {'costa': 'No apto', 'sierra_alta': 'Papa nativa', 'sierra_media': 'Frijol, Maiz', 'selva': 'Cacao nativo, Cafe, Platano'},
+    'amazonas': {'costa': 'No apto', 'sierra_alta': 'Papa nativa', 'sierra_media': 'Frijol, Maiz', 'selva': 'Cacao nativo, Cafe'},
     'ancash': {'costa': 'Esparrago, Palta', 'sierra_alta': 'Maca, Papa nativa', 'sierra_media': 'Quinua, Maiz amilaceo', 'selva': 'Cafe'},
     'apurimac': {'costa': 'No apto', 'sierra_alta': 'Papa nativa, Canihua', 'sierra_media': 'Quinua, Maiz', 'selva': 'No apto'},
     'arequipa': {'costa': 'Cebolla, Ajo', 'sierra_alta': 'Papa nativa', 'sierra_media': 'Quinua', 'selva': 'No apto'},
-    'ayacucho': {'costa': 'No apto', 'sierra_alta': 'Maca, Papa nativa', 'sierra_media': 'Quinua, Tara', 'selva': 'Cacao, Cafe'},
+    'ayacucho': {'costa': 'No apto', 'sierra_alta': 'Maca, Papa nativa', 'sierra_media': 'Quinua, Tara', 'selva': 'Cacao'},
     'cajamarca': {'costa': 'No apto', 'sierra_alta': 'Papa nativa, Oca', 'sierra_media': 'Maiz morado', 'selva': 'Cafe, Cacao'},
-    'cusco': {'costa': 'No apto', 'sierra_alta': 'Papa amarga', 'sierra_media': 'Maiz gigante, Quinua', 'selva': 'Cacao chuncho, Te, Cafe'},
+    'cusco': {'costa': 'No apto', 'sierra_alta': 'Papa amarga', 'sierra_media': 'Maiz gigante, Quinua', 'selva': 'Cacao chuncho, Cafe'},
     'huancavelica': {'costa': 'No apto', 'sierra_alta': 'Maca', 'sierra_media': 'Quinua, Maiz', 'selva': 'No apto'},
     'huanuco': {'costa': 'No apto', 'sierra_alta': 'Maca', 'sierra_media': 'Papa amarilla', 'selva': 'Cacao, Cafe'},
     'ica': {'costa': 'Pallar, Algodon nativo, Vid', 'sierra_alta': 'No apto', 'sierra_media': 'No apto', 'selva': 'No apto'},
@@ -45,7 +43,7 @@ bd_dra_peru = {
     'lambayeque': {'costa': 'Zapallo loche, Algodon', 'sierra_alta': 'No apto', 'sierra_media': 'No apto', 'selva': 'No apto'},
     'lima': {'costa': 'Manzana, Fresa', 'sierra_alta': 'Papa nativa', 'sierra_media': 'Chirimoya', 'selva': 'No apto'},
     'loreto': {'costa': 'No apto', 'sierra_alta': 'No apto', 'sierra_media': 'No apto', 'selva': 'Camu camu, Aguaje, Platano'},
-    'madre de dios': {'costa': 'No apto', 'sierra_alta': 'No apto', 'sierra_media': 'No apto', 'selva': 'Castana, Copoazu, Yuca'},
+    'madre de dios': {'costa': 'No apto', 'sierra_alta': 'No apto', 'sierra_media': 'No apto', 'selva': 'Castana, Copoazu'},
     'moquegua': {'costa': 'Palta, Lima', 'sierra_alta': 'Papa nativa', 'sierra_media': 'Oregano nativo', 'selva': 'No apto'},
     'pasco': {'costa': 'No apto', 'sierra_alta': 'Maca, Papa nativa', 'sierra_media': 'Quinua', 'selva': 'Rocoto, Cafe, Cacao'},
     'piura': {'costa': 'Limon sutil, Mango', 'sierra_alta': 'Papa nativa', 'sierra_media': 'Cafe', 'selva': 'No apto'},
@@ -53,23 +51,21 @@ bd_dra_peru = {
     'san martin': {'costa': 'No apto', 'sierra_alta': 'No apto', 'sierra_media': 'No apto', 'selva': 'Cacao, Cafe, Sacha inchi'},
     'tacna': {'costa': 'Olivo, Aji amarillo', 'sierra_alta': 'Papa nativa', 'sierra_media': 'Oregano nativo', 'selva': 'No apto'},
     'tumbes': {'costa': 'Limon, Platano, Cacao', 'sierra_alta': 'No apto', 'sierra_media': 'No apto', 'selva': 'No apto'},
-    'ucayali': {'costa': 'No apto', 'sierra_alta': 'No apto', 'sierra_media': 'No apto', 'selva': 'Palma aceitera, Cacao, Platano'}
+    'ucayali': {'costa': 'No apto', 'sierra_alta': 'No apto', 'sierra_media': 'No apto', 'selva': 'Palma aceitera, Cacao'}
 }
 
 bd_senasa = {
-    'papa': {'plaga': 'Rancha / Gorgojo de los Andes', 'tratamiento': 'Control biologico (Beauveria bassiana). Uso de fungicidas sistemicos.'},
-    'maca': {'plaga': 'Gorgojo de la maca / Gusano cortador', 'tratamiento': 'Control cultural, trampas de luz, aplicacion de extracto de Neem.'},
-    'quinua': {'plaga': 'Polilla de la quinua / Mildiu', 'tratamiento': 'Aplicacion de Spinosad (biologico). Protocolos de rotacion de cultivos.'},
-    'maiz': {'plaga': 'Gusano cogollero', 'tratamiento': 'Liberacion de avispas Trichogramma o aplicacion de Bacillus thuringiensis.'},
-    'cacao': {'plaga': 'Moniliasis / Mazorca negra', 'tratamiento': 'Podas fitosanitarias intensivas. Aplicacion regulada de cobre.'},
-    'cafe': {'plaga': 'Roya del cafe / Broca', 'tratamiento': 'Oxicloruro de cobre para Roya. Instalacion de trampas etilicas para Broca.'},
-    'platano': {'plaga': 'Mal de Panama / Sigatoka Negra', 'tratamiento': 'Inoculacion de Trichoderma spp. en suelo. Control estricto de malezas.'},
-    'rocoto': {'plaga': 'Mosca de la fruta / Acaros', 'tratamiento': 'Implementacion de trampas pegajosas y control etologico continuo.'},
-    'default': {'plaga': 'Insectos masticadores / Hongos de suelo', 'tratamiento': 'Aplicacion de abonos organicos (Biol) y caldo sulfocalcico preventivo.'}
+    'papa': {'plaga': 'Rancha / Gorgojo', 'tratamiento': 'Beauveria bassiana. Fungicidas sistemicos.'},
+    'maca': {'plaga': 'Gorgojo / Gusano cortador', 'tratamiento': 'Control cultural, trampas de luz, extracto de Neem.'},
+    'quinua': {'plaga': 'Polilla / Mildiu', 'tratamiento': 'Spinosad (biologico). Rotacion de cultivos.'},
+    'maiz': {'plaga': 'Gusano cogollero', 'tratamiento': 'Avispas Trichogramma o Bacillus thuringiensis.'},
+    'cacao': {'plaga': 'Moniliasis / Mazorca negra', 'tratamiento': 'Podas fitosanitarias. Aplicacion de cobre.'},
+    'cafe': {'plaga': 'Roya / Broca', 'tratamiento': 'Oxicloruro de cobre. Trampas etilicas para Broca.'},
+    'platano': {'plaga': 'Mal de Panama / Sigatoka', 'tratamiento': 'Inoculacion de Trichoderma spp. Control de malezas.'},
+    'default': {'plaga': 'Insectos masticadores', 'tratamiento': 'Abonos organicos (Biol) y caldo sulfocalcico.'}
 }
 
 deps_costa = ['tumbes', 'piura', 'lambayeque', 'la libertad', 'ancash', 'lima', 'callao', 'ica', 'arequipa', 'moquegua', 'tacna']
-nombres_meses = {1:'Ene', 2:'Feb', 3:'Mar', 4:'Abr', 5:'May', 6:'Jun', 7:'Jul', 8:'Ago', 9:'Sep', 10:'Oct', 11:'Nov', 12:'Dic'}
 
 def normalizar_texto(texto):
     if not texto: return ""
@@ -78,10 +74,9 @@ def normalizar_texto(texto):
 @st.cache_data
 def obtener_datos_geo(lat, lon):
     try:
-        res = requests.get(f"https://nominatim.openstreetmap.org/reverse?format=json&lat={lat}&lon={lon}&zoom=10&addressdetails=1", headers={'User-Agent': 'AgroIA_Tech/1.0'}).json()
-        nombre = res.get('display_name', 'Ubicacion desconocida')
-        dep = res.get('address', {}).get('state', res.get('address', {}).get('region', res.get('address', {}).get('province', '')))
-        return nombre, dep
+        res = requests.get(f"https://nominatim.openstreetmap.org/reverse?format=json&lat={lat}&lon={lon}&zoom=10&addressdetails=1").json()
+        dep = res.get('address', {}).get('state', '')
+        return res.get('display_name', 'Ubicacion'), dep
     except:
         return "Error", ""
 
@@ -93,134 +88,117 @@ def obtener_elevacion(lat, lon):
     except:
         return 0
 
-col_mapa, col_datos = st.columns([1.2, 1])
-
+# --- LAYOUT ESTILO DASHBOARD ---
+# Columna del mapa (más grande) y columna de datos
+col_mapa, col_datos = st.columns([1.8, 1.2])
 
 with col_mapa:
+    st.markdown("<h3 style='color: white;'>🛰️ Geo-Visor AgroIA</h3>", unsafe_allow_html=True)
     centro_mapa = [-9.19, -75.01]
     zoom_mapa = 6
     
     if st.session_state['lat_seleccionada'] is not None:
         centro_mapa = [st.session_state['lat_seleccionada'], st.session_state['lon_seleccionada']]
-        zoom_mapa = 11
+        zoom_mapa = 10
 
     m = folium.Map(location=centro_mapa, zoom_start=zoom_mapa)
-    folium.TileLayer(
-        tiles='https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
-        attr='Google',
-        name='Google Satellite Hybrid'
-    ).add_to(m)
+    folium.TileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', attr='Google', name='Satellite').add_to(m)
     
     if st.session_state['lat_seleccionada'] is not None:
-        folium.Marker(
-            [st.session_state['lat_seleccionada'], st.session_state['lon_seleccionada']],
-            popup="Punto de Analisis",
-            icon=folium.Icon(color="red", icon="info-sign")
-        ).add_to(m)
+        folium.Marker([st.session_state['lat_seleccionada'], st.session_state['lon_seleccionada']], icon=folium.Icon(color="red")).add_to(m)
     
-    mapa_web = st_folium(m, height=700, width=800, key="visor_principal")
-
+    mapa_web = st_folium(m, height=750, width=850, key="mapa")
 
 with col_datos:
     if mapa_web and mapa_web.get("last_clicked"):
-        nuevo_lat = mapa_web["last_clicked"]["lat"]
-        nuevo_lon = mapa_web["last_clicked"]["lng"]
+        lat = mapa_web["last_clicked"]["lat"]
+        lon = mapa_web["last_clicked"]["lng"]
         
-        if nuevo_lat != st.session_state['lat_seleccionada'] or nuevo_lon != st.session_state['lon_seleccionada']:
-            st.session_state['lat_seleccionada'] = nuevo_lat
-            st.session_state['lon_seleccionada'] = nuevo_lon
+        if lat != st.session_state['lat_seleccionada'] or lon != st.session_state['lon_seleccionada']:
+            st.session_state['lat_seleccionada'] = lat
+            st.session_state['lon_seleccionada'] = lon
             st.rerun()
             
     if st.session_state['lat_seleccionada'] is not None:
         lat = st.session_state['lat_seleccionada']
         lon = st.session_state['lon_seleccionada']
         
-        with st.spinner("Procesando telemetria satelital..."):
+        with st.spinner("Sincronizando telemetría..."):
             nombre_ubi, dep_mapa = obtener_datos_geo(lat, lon)
             altitud_msnm = obtener_elevacion(lat, lon)
             dep_norm = normalizar_texto(dep_mapa)
             
-            region_dra = 'No identificada'
-            if dep_norm:
-                for clave in bd_dra_peru.keys():
-                    if clave in dep_norm:
-                        region_dra = clave
-                        break
+            region_dra = next((clave for clave in bd_dra_peru.keys() if clave in dep_norm), 'No identificada')
             
             if region_dra == 'No identificada':
-                st.error("ERROR DE LIMITES: Coordenadas detectadas en zona maritima o territorio internacional. El analisis requiere seleccion dentro de la superficie agricola peruana.")
+                st.error("Ubicación fuera de la frontera agrícola peruana validada.")
             else:
-                st.info(f"UBICACION DETECTADA: {nombre_ubi}")
-                url = f"https://power.larc.nasa.gov/api/temporal/daily/point?parameters=T2M_MIN,PRECTOTCORR&community=AG&longitude={lon}&latitude={lat}&start=20150101&end=20251231&format=JSON"
-                respuesta = requests.get(url)
+                url = f"https://power.larc.nasa.gov/api/temporal/daily/point?parameters=T2M,PRECTOTCORR,RH2M&community=AG&longitude={lon}&latitude={lat}&start=20230101&end=20231231&format=JSON"
+                res = requests.get(url)
                 
-                if respuesta.status_code == 200:
-                    datos = respuesta.json()
+                if res.status_code == 200:
+                    datos = res.json()['properties']['parameter']
                     df = pd.DataFrame({
-                        'Fecha': list(datos['properties']['parameter']['T2M_MIN'].keys()),
-                        'Temp_Min': list(datos['properties']['parameter']['T2M_MIN'].values()),
-                        'Lluvia': list(datos['properties']['parameter']['PRECTOTCORR'].values())
+                        'Fecha': pd.to_datetime(list(datos['T2M'].keys()), format='%Y%m%d'),
+                        'Temp': list(datos['T2M'].values()),
+                        'Lluvia': list(datos['PRECTOTCORR'].values()),
+                        'Humedad': list(datos['RH2M'].values())
                     })
+                    df = df[df['Temp'] > -50] # Filtrar errores NASA
                     
-                    df = df[df['Temp_Min'] > -50].copy()
-                    df['Fecha'] = pd.to_datetime(df['Fecha'], format='%Y%m%d')
-                    df['Mes'] = df['Fecha'].dt.month
+                    temp_promedio = df['Temp'].mean()
+                    humedad_promedio = df['Humedad'].mean()
                     
-                    if altitud_msnm < 2000:
-                        piso_ecologico, nombre_piso = ('costa', "Costa / Valles") if region_dra in deps_costa else ('selva', "Selva Tropical")
-                    elif 2000 <= altitud_msnm < 3500:
-                        piso_ecologico, nombre_piso = 'sierra_media', "Sierra Interandina"
-                    else:
-                        piso_ecologico, nombre_piso = 'sierra_alta', "Sierra Alta / Puna"
+                    # 1. SECCIÓN: Detection of Meteorological Hazards
+                    st.markdown("<h3 style='color: #00E5FF;'>Detection of Meteorological Hazards</h3>", unsafe_allow_html=True)
                     
+                    # Cajas de métricas rápidas
                     col_m1, col_m2 = st.columns(2)
-                    col_m1.metric(label="Jurisdiccion Regional", value=region_dra.upper())
-                    col_m2.metric(label="Altitud Topografica", value=f"{altitud_msnm} msnm", delta=nombre_piso, delta_color="off")
+                    col_m1.markdown(f"<div class='metric-card'><div class='metric-label'>Altitud Topográfica</div><div class='metric-value'>{altitud_msnm} m</div></div>", unsafe_allow_html=True)
+                    col_m2.markdown(f"<div class='metric-card'><div class='metric-label'>Temp. Promedio</div><div class='metric-value'>{temp_promedio:.1f} °C</div></div>", unsafe_allow_html=True)
                     
-                    st.divider()
-                    st.subheader("Deteccion de Riesgos Meteorologicos")
+                    st.write("") # Espaciador
                     
-                    meses_heladas = df[df['Temp_Min'] <= 0]['Mes'].unique()
-                    max_lluvia = df['Lluvia'].max()
+                    # Gráficos tipo Medidor (Gauges) para Humedad y Lluvia
+                    col_g1, col_g2 = st.columns(2)
                     
-                    col_r1, col_r2 = st.columns(2)
-                    
-                    with col_r1:
-                        if len(meses_heladas) > 0:
-                            st.warning(f"ALERTA TERMICA: Riesgo de heladas criticas durante los meses de {', '.join([nombres_meses[m] for m in sorted(meses_heladas)])}.")
-                        else:
-                            st.success("PARAMETRO TERMICO: Estable. Riesgo de heladas inferior al umbral critico.")
-                            
-                    with col_r2:
-                        if max_lluvia > 40:
-                            st.error(f"ALERTA HIDRICA: Precipitaciones torrenciales detectadas (picos de {max_lluvia:.1f} mm/dia). Riesgo de deslizamientos en: {', '.join([nombres_meses[m] for m in sorted(df[df['Lluvia'] > 40]['Mes'].unique())])}.")
-                        else:
-                            st.success("PARAMETRO HIDRICO: Precipitaciones dentro de margenes de seguridad operacional.")
+                    fig_hum = go.Figure(go.Indicator(
+                        mode = "gauge+number",
+                        value = humedad_promedio,
+                        title = {'text': "Humedad Relativa (%)", 'font': {'color': 'white'}},
+                        gauge = {'axis': {'range': [0, 100]}, 'bar': {'color': "#00E5FF"}, 'bgcolor': "black"}
+                    ))
+                    fig_hum.update_layout(height=200, margin=dict(l=10, r=10, t=30, b=10), paper_bgcolor="#0E1117", font={'color': "white"})
+                    col_g1.plotly_chart(fig_hum, use_container_width=True)
 
-                    st.divider()
-                    st.subheader("Inteligencia Agronomica")
+                    riesgo_hidrico = df['Lluvia'].max()
+                    fig_lluvia = go.Figure(go.Indicator(
+                        mode = "gauge+number",
+                        value = riesgo_hidrico,
+                        title = {'text': "Pico Lluvia (mm/día)", 'font': {'color': 'white'}},
+                        gauge = {'axis': {'range': [0, 100]}, 'bar': {'color': "#FF4B4B"}, 'bgcolor': "black"}
+                    ))
+                    fig_lluvia.update_layout(height=200, margin=dict(l=10, r=10, t=30, b=10), paper_bgcolor="#0E1117", font={'color': "white"})
+                    col_g2.plotly_chart(fig_lluvia, use_container_width=True)
+
+                    # Gráfico de líneas (Tendencia anual)
+                    fig_line = px.line(df, x='Fecha', y='Temp', title="Fluctuación Térmica (Histórico NASA)", template="plotly_dark")
+                    fig_line.update_layout(height=250, margin=dict(l=0, r=0, t=30, b=0))
+                    st.plotly_chart(fig_line, use_container_width=True)
+
+                    # 2. SECCIÓN: Agronomic Intelligence
+                    st.markdown("<h3 style='color: #00FF7F;'>Agronomic Intelligence</h3>", unsafe_allow_html=True)
                     
-                    catalogo = bd_dra_peru.get(region_dra, bd_dra_peru['junin'])
-                    recomendacion = catalogo.get(piso_ecologico, 'Cultivo estandar')
+                    piso = 'arida' if (df['Lluvia'].mean() < 0.5 and region_dra in deps_costa) else ('costa' if altitud_msnm < 2000 and region_dra in deps_costa else ('selva' if altitud_msnm < 2000 else ('sierra_media' if altitud_msnm < 3500 else 'sierra_alta')))
+                    recomendacion = 'Tara, Olivo, Pitahaya' if piso == 'arida' else bd_dra_peru[region_dra].get(piso, 'Cultivo estándar')
+                    alerta_senasa = next((datos for clave, datos in bd_senasa.items() if clave in normalizar_texto(recomendacion)), bd_senasa['default'])
                     
-                    alerta_senasa = bd_senasa['default']
-                    for plaga_clave, plaga_datos in bd_senasa.items():
-                        if plaga_clave in normalizar_texto(recomendacion):
-                            alerta_senasa = plaga_datos
-                            break
-                    
-                    tab1, tab2 = st.tabs(["Directiva MIDAGRI", "Protocolo SENASA"])
+                    # Pestañas diseñadas como tarjetas
+                    tab1, tab2 = st.tabs(["MIDAGRI Directive", "SENASA Protocol"])
                     
                     with tab1:
-                        st.write("Con base en el modelo meteorologico predictivo y el perfil topografico, el catalogo de biodiversidad autoctona sugiere:")
-                        st.info(f"CULTIVO ESTRATEGICO SUGERIDO: {recomendacion.upper()}")
+                        st.info(f"*Optimal Planting Recommendations:*\n\nBasado en el perfil climático {piso.replace('_', ' ').title()}, se sugiere priorizar:\n### {recomendacion.upper()}")
                         
                     with tab2:
-                        st.write("Evaluacion de riesgo sanitario basado en el cultivo estrategico proyectado:")
-                        st.error(f"AMENAZA PROYECTADA: {alerta_senasa['plaga']}")
-                        st.success(f"CONTRAMEDIDA OFICIAL: {alerta_senasa['tratamiento']}")
-
-                else:
-                    st.error("FALLO DE CONEXION: No se pudo establecer enlace con los servidores de NASA POWER.")
-    else:
-        st.write("ESTADO DEL SISTEMA: En espera de seleccion de coordenadas en el visor geoespacial.")
+                        st.error(f"*Phytosanitary Alerts:\n\nAmenaza:* {alerta_senasa['plaga']}")
+                        st.success(f"*Disease Control Protocols:*\n\n{alerta_senasa['tratamiento']}")
