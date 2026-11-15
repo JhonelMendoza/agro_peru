@@ -70,7 +70,7 @@ def obtener_elevacion(lat, lon):
 col_mapa, col_datos = st.columns([1.2, 1.8])
 
 with col_mapa:
-    st.markdown("<h3 style='color: white;'>Geo-Visor AgroIA</h3>", unsafe_allow_html=True)
+    st.markdown("<h3 style='color: white;'>Geo-Visor AGROIA</h3>", unsafe_allow_html=True)
     centro_mapa = [-9.19, -75.01]
     zoom_mapa = 6
     if st.session_state['lat_seleccionada'] is not None:
@@ -136,7 +136,7 @@ with col_datos:
                     df['Anio'] = df['Fecha'].dt.year
                     df['Mes'] = df['Fecha'].dt.month
                     
-                    st.markdown("<h3 style='color: #00E5FF;'>Motor de Prediccion Climatica (Machine Learning)</h3>", unsafe_allow_html=True)
+                    st.markdown("<h3 style='color: #00E5FF;'>Motor de Prediccion Climatica AGROIA </h3>", unsafe_allow_html=True)
                     
                     col_p1, col_p2 = st.columns(2)
                     anio_pred = col_p1.selectbox("Seleccione Año de Proyeccion", [2025, 2026, 2027, 2028, 2029, 2030])
